@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  body {
+    @apply bg-kertas text-neutral-900 font-sans antialiased dark:bg-neutral-950 dark:text-neutral-100;
+  }
+  ::selection {
+    @apply bg-tinta-600 text-white;
+  }
+}
+
+@layer components {
+  .container-nalar {
+    @apply mx-auto w-full max-w-5xl px-4 sm:px-6;
+  }
+  /* Tipografi isi artikel */
+  .article-body {
+    @apply text-[1.05rem] leading-8 text-neutral-800 dark:text-neutral-200;
+  }
+  .article-body p {
+    @apply mb-5;
+  }
+  .article-body h2 {
+    @apply font-serif text-2xl font-bold mt-10 mb-4 text-neutral-900 dark:text-white;
+  }
+  .article-body h3 {
+    @apply font-serif text-xl font-bold mt-8 mb-3 text-neutral-900 dark:text-white;
+  }
+  .article-body strong {
+    @apply font-semibold text-neutral-900 dark:text-white;
+  }
+  .article-body blockquote {
+    @apply border-l-4 border-tinta-600 pl-5 py-1 my-6 italic font-serif text-lg text-neutral-700 dark:text-neutral-300;
+  }
+  .article-body ul,
+  .article-body ol {
+    @apply mb-5 pl-6 space-y-2;
+  }
+  .article-body ul {
+    @apply list-disc;
+  }
+  .article-body ol {
+    @apply list-decimal;
+  }
+  .article-body hr {
+    @apply my-8 border-neutral-300 dark:border-neutral-700;
+  }
+  .article-body code {
+    @apply bg-neutral-200 dark:bg-neutral-800 rounded px-1.5 py-0.5 text-sm font-mono;
+  }
+  .dropcap::first-letter {
+    @apply font-serif text-5xl font-bold float-left mr-2 leading-[0.9] text-tinta-700 dark:text-tinta-400;
+  }
+}
