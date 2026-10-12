@@ -5,9 +5,10 @@ category: "politik"
 excerpt: "Blusukan dadakan, joget di TikTok, makan di warteg — politik Indonesia makin mirip industri hiburan. Siapa yang dirugikan?"
 sample: true
 slug: "politik-gimmick"
-thumbnail: "https://image.pollinations.ai/prompt/editorial%20news%20illustration%2C%20politik%2C%20gimmick%2C%20ketika%2C%20mengalahkan%2C%20politik%2C%20sensasi%2C%20dramatic%20lighting%2C%20professional%20journalism%20style%2C%20no%20text?width=800&height=450&nologo=true&model=flux"
+thumbnail: "https://upload.wikimedia.org/wikipedia/commons/5/5c/Stamp_of_Indonesia_-_2005_-_Colnect_385126_-_Politics_-_Government_.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+photo_source: "wikimedia"
+photo_credit: "Wikimedia Commons / Post of Indonesia"
 ---
-
 Perhatikan pola pemberitaan politik Indonesia dalam beberapa tahun terakhir. Seorang pejabat makan di warung kaki lima — viral. Menteri joget mengikuti tren TikTok — viral. Kepala daerah sidak pasar sambil marah-marah di depan kamera — viral berkali-kali.
 
 Semua itu *dirancang* untuk viral. Dan kita semua menelannya bulat-bulat.

@@ -5,9 +5,10 @@ category: "teknologi"
 excerpt: "Kecerdasan buatan kini menulis ribuan artikel berita setiap hari. Cepat dan murah — tapi siapa yang bertanggung jawab ketika ia salah?"
 sample: true
 slug: "ai-menulis-berita"
-thumbnail: "https://image.pollinations.ai/prompt/editorial%20news%20illustration%2C%20teknologi%2C%20berita%2C%20kebenarannya%2C%20ketika%2C%20menjamin%2C%20menulis%2C%20dramatic%20lighting%2C%20professional%20journalism%20style%2C%20no%20text?width=800&height=450&nologo=true&model=flux"
+thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Artificial_Intelligence_Word_Cloud.png/960px-Artificial_Intelligence_Word_Cloud.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+photo_source: "wikimedia"
+photo_credit: "Wikimedia Commons / Madhav-Malhotra-003"
 ---
-
 Ruang redaksi di seluruh dunia sedang berubah diam-diam. Di balik portal-portal berita yang Anda baca setiap pagi, semakin banyak paragraf yang tidak pernah disentuh tangan manusia. Kecerdasan buatan kini merangkum, menulis, bahkan menyunting berita — lebih cepat dan jauh lebih murah daripada wartawan mana pun.
 
 Pertanyaannya bukan lagi *apakah* AI bisa menulis berita. Ia sudah bisa. Pertanyaannya: **siapa yang bertanggung jawab ketika ia salah?**

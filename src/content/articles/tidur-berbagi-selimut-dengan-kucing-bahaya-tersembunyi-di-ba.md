@@ -7,8 +7,10 @@ slug: tidur-berbagi-selimut-dengan-kucing-bahaya-tersembunyi-di-ba
 sources_count: 1
 model: openai/gpt-oss-120b
 ai_generated: true
+thumbnail: "https://live.staticflickr.com/7573/15423726633_ca769495de_b.jpg"
+photo_source: "openverse"
+photo_credit: "Openverse / AK Rockefeller"
 ---
-
 &nbsp;
 
 **Lead**  

@@ -7,8 +7,10 @@ slug: kementan-rebut-penyuluh-pertanian-dari-daerah-antara-janji-p
 sources_count: 1
 model: openai/gpt-oss-120b
 ai_generated: true
+thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/99/Latest_Business_Hindi_News_%E2%80%93_Economy%2C_Market_%26_Finance_Updates.jpg/960px-Latest_Business_Hindi_News_%E2%80%93_Economy%2C_Market_%26_Finance_Updates.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+photo_source: "wikimedia"
+photo_credit: "Wikimedia Commons / Rajexpress1"
 ---
-
 ---
 
 **Lead**  

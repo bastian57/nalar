@@ -7,8 +7,10 @@ slug: prabowo-gandeng-mesir-grand-prix-mandalika-dan-minyak-aceh-s
 sources_count: 5
 model: openai/gpt-oss-120b
 ai_generated: true
+thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/99/Latest_Business_Hindi_News_%E2%80%93_Economy%2C_Market_%26_Finance_Updates.jpg/960px-Latest_Business_Hindi_News_%E2%80%93_Economy%2C_Market_%26_Finance_Updates.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+photo_source: "wikimedia"
+photo_credit: "Wikimedia Commons / Rajexpress1"
 ---
-
 ---
 
 Presiden Prabowo Subianto baru‑baru ini mengumumkan penguatan kemitraan strategis dengan Mesir—dari visa, pertahanan, hingga riset—serta menyoroti keberhasilan Pertamina Grand Prix 2026 di Mandalika dan persetujuan penjualan minyak sumur rakyat Aceh. Di balik sorotan positif, rangkaian langkah ini menyiratkan agenda politik yang lebih dalam: mengukuhkan posisi domestik Prabowo, memanfaatkan hubungan luar negeri untuk menutup celah ekonomi, serta mengalirkan dana kampanye lewat proyek‑proyek megah yang masih jauh dari transparansi.
