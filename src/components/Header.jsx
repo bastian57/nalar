@@ -45,7 +45,8 @@ export default function Header() {
       {/* garis aksen atas */}
       <div className="h-1 bg-tinta-600" />
       <div className="container-nalar flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-baseline gap-2">
+        <Link to="/" className="flex items-center gap-2.5">
+          <img src="/nalar-icon.jpg" alt="Nalar" className="h-10 w-10 rounded-full object-cover ring-2 ring-tinta-600/30" />
           <span className="font-serif text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
             Nalar
             <span className="text-tinta-600 dark:text-tinta-400">.</span>
