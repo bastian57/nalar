@@ -1,0 +1,45 @@
+# Nalar — Deep Dive mingguan
+# Jalan tiap Minggu 06:00 WIB (= Sabtu 23:00 UTC).
+# 1 analisis investigatif panjang (1000-1200 kata) dari topik
+# dengan liputan multi-sumber terbesar minggu itu.
+name: Nalar Deep Dive Weekly
+
+on:
+  schedule:
+    - cron: '0 23 * * 6'
+  workflow_dispatch: # tombol "Run workflow" manual dari tab Actions
+
+permissions:
+  contents: write # butuh untuk commit & push artikel
+
+jobs:
+  deep-dive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install feedparser requests
+
+      - name: Generate deep dive
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python scripts/generate_news.py --deep-dive --max 1
+
+      - name: Commit & push deep dive
+        run: |
+          git config user.name "nalar-bot"
+          git config user.email "nalar-bot[bot]@users.noreply.github.com"
+          git add src/content/articles/
+          if git diff --cached --quiet; then
+            echo "Tidak ada deep dive baru — skip commit."
+          else
+            git commit -m "🔍 Nalar deep dive mingguan ($(date -u +%Y-%m-%d_UTC))"
+            git push
+          fi

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CATEGORIES, getArticles } from '../lib/articles.js'
 import ArticleCard from '../components/ArticleCard.jsx'
+import Trending from '../components/Trending.jsx'
 
 export default function Home() {
   const articles = getArticles()
@@ -21,6 +22,9 @@ export default function Home() {
           analisis tajam dan independen — agar Anda membaca dengan nalar, bukan emosi.
         </p>
       </section>
+
+      {/* trending */}
+      <Trending />
 
       {/* artikel utama */}
       {featured ? (

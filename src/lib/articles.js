@@ -124,6 +124,7 @@ const articles = Object.entries(rawModules)
       date: meta.date || '',
       category: (meta.category || 'umum').toLowerCase(),
       excerpt: meta.excerpt || '',
+      deepDive: meta.deep_dive === 'true' || meta.deep_dive === true,
       body,
       html: mdToHtml(body),
       readingMinutes: Math.max(1, Math.round(body.split(/\s+/).length / 200)),
@@ -153,6 +154,14 @@ export function getArticle(slug) {
 
 export function getByCategory(cat) {
   return articles.filter((a) => a.category === cat.toLowerCase())
+}
+
+export function isDeepDive(article) {
+  return !!article?.deepDive
+}
+
+export function getDeepDives() {
+  return articles.filter(isDeepDive)
 }
 
 export function formatDate(iso) {

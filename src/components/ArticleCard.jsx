@@ -20,7 +20,12 @@ export default function ArticleCard({ article, featured = false }) {
         </span>
       </div>
       <div className={`flex flex-1 flex-col p-5 ${featured ? 'md:p-8' : ''}`}>
-        <div className="flex items-center gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {article.deepDive && (
+            <span className="rounded-full bg-amber-400 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-amber-950 ring-1 ring-amber-600/50 shadow-sm">
+              ✦ Deep Dive
+            </span>
+          )}
           <span className="rounded-full bg-tinta-50 px-2.5 py-1 font-semibold uppercase tracking-wide text-tinta-700 dark:bg-neutral-800 dark:text-tinta-400">
             {categoryName(article.category)}
           </span>

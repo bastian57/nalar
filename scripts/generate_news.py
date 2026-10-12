@@ -31,15 +31,26 @@ ARTICLES_DIR = ROOT / "src" / "content" / "articles"
 SOURCES_FILE = Path(__file__).resolve().parent / "rss_sources.json"
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-# Model utama + fallback (coba berurutan bila 429/gagal)
-GROQ_MODELS = ["qwen/qwen3-32b", "openai/gpt-oss-120b"]
+# Model utama + fallback (coba berurutan bila 429/gagal).
+# "qwen/qwen3.8-27b" = model yang TERBUKTI jalan live di Phoenix (llm_narrator.py,
+# dites live 2026-10-07). JANGAN pakai llama-3.3-70b-versatile (HILANG dari Groq)
+# atau qwen-qwq-32b (dihapus dari katalog Groq) — keduanya bikin run gagal total.
+# Bisa dioverride tanpa edit kode via secret/variabel GROQ_LLM_MODEL.
+GROQ_MODELS = [os.environ.get("GROQ_LLM_MODEL", "qwen/qwen3.8-27b"),
+               "openai/gpt-oss-120b"]
 
 MAX_ARTICLES_PER_RUN = 5
 MAX_PER_CATEGORY = 2
-RECENCY_HOURS = 48          # hanya berita < 36 jam
-SIMILARITY_THRESHOLD = 0.80  # judul mirip -> skip (anti duplikat)
+RECENCY_HOURS = 48          # hanya berita < 48 jam (lebih longgar)
+SIMILARITY_THRESHOLD = 0.80  # judul mirip -> skip (0.55 terlalu agresif)
 MIN_KEYWORD_OVERLAP = 2     # syarat artikel "terkait"
 MAX_RELATED = 4             # maks artikel pendukung per topik
+
+# --- Deep Dive (analisis investigatif mingguan, 1000-1200 kata)
+DEEP_DIVE_MIN_SOURCES = 3   # butuh >=3 sumber berbeda untuk 1 topik
+DEEP_DIVE_RECENCY_HOURS = 168  # window 7 hari (deep dive jalan mingguan)
+DEEP_DIVE_MAX_RELATED = 8   # kumpulkan bahan lebih banyak
+DEEP_DIVE_MAX_TOKENS = 3000
 
 WIB = timezone(timedelta(hours=7))
 
@@ -72,6 +83,16 @@ SYSTEM_PROMPT = (
     "Panjang 400-500 kata. Struktur: judul tajam, lead satu paragraf, isi, "
     "analisis kritis, penutup yang mencerdaskan. Nada cerdas, berani, tidak "
     "netral-netral saja, tapi tetap berbasis fakta dari bahan yang diberikan."
+)
+
+DEEP_DIVE_SYSTEM_PROMPT = (
+    "Kamu adalah jurnalis investigasi senior Indonesia — kritis, independen, "
+    "tajam, dan berani. Kamu menulis ANALISIS MENDALAM (deep dive) dalam Bahasa "
+    "Indonesia: bukan sekadar melaporkan peristiwa, tapi membongkar apa yang "
+    "terjadi di baliknya. JANGAN pernah menyalin kalimat dari sumber — tulis "
+    "ulang sepenuhnya dengan bahasamu sendiri sebagai analis. Tetap berbasis "
+    "fakta dari bahan yang diberikan; bedakan dengan jelas antara fakta, "
+    "analisis, dan prediksi. Nada cerdas, berani, mencerdaskan."
 )
 
 logging.basicConfig(
@@ -164,7 +185,8 @@ def collect_items(sources):
 # ------------------------------------------------------- dedup & related
 
 def load_existing():
-    """Baca judul + slug artikel yang sudah ada (anti duplikat antar-run)."""
+    """Baca judul + slug artikel yang sudah ada (anti duplikat antar-run).
+    Artikel dengan 'sample: true' di frontmatter diabaikan (tidak ikut dedup)."""
     existing = []  # list of (slug, title)
     if not ARTICLES_DIR.is_dir():
         return existing
@@ -172,12 +194,16 @@ def load_existing():
         try:
             text = md.read_text(encoding="utf-8")
             m = re.match(r"^---\s*\n(.*?)\n---\s*\n", text, re.S)
+            if not m:
+                continue
+            fm = m.group(1)
+            # Skip artikel contoh
+            if re.search(r"^sample:\s*true\s*$", fm, re.M | re.I):
+                continue
             title = ""
-            if m:
-                tm = re.search(r"^title:\s*[\"']?(.*?)[\"']?\s*$",
-                               m.group(1), re.M)
-                if tm:
-                    title = tm.group(1).strip()
+            tm = re.search(r"^title:\s*[\"']?(.*?)[\"']?\s*$", fm, re.M)
+            if tm:
+                title = tm.group(1).strip()
             existing.append((md.stem, title or md.stem))
         except Exception:
             continue
@@ -196,8 +222,8 @@ def is_duplicate(title, existing):
     return False
 
 
-def find_related(item, all_items):
-    """Cari 3-5 artikel terkait dari sumber BERBEDA tentang topik sama."""
+def find_related(item, all_items, max_related=MAX_RELATED):
+    """Cari artikel terkait dari sumber BERBEDA tentang topik sama."""
     cands = []
     for other in all_items:
         if other is item or other["source"] == item["source"]:
@@ -213,7 +239,7 @@ def find_related(item, all_items):
             continue
         seen_sources.add(o["source"])
         related.append(o)
-        if len(related) >= MAX_RELATED:
+        if len(related) >= max_related:
             break
     return related
 
@@ -235,32 +261,109 @@ def pick_topics(items, existing):
              len(picked), [p["title"][:45] for p in picked])
     return picked
 
+
+def pick_deep_dive_topic(items, existing):
+    """Pilih 1 topik dengan liputan multi-sumber terbanyak.
+
+    Syarat: minimal DEEP_DIVE_MIN_SOURCES artikel terkait dari sumber berbeda.
+    Dipakai mode --deep-dive (mingguan).
+    """
+    fresh = [it for it in items if not is_duplicate(it["title"], existing)]
+    log.info("%d item setelah dedup judul (deep dive)", len(fresh))
+    best, best_n = None, 0
+    for it in fresh:
+        related = find_related(it, items, max_related=DEEP_DIVE_MAX_RELATED)
+        n = len(related)
+        if n >= DEEP_DIVE_MIN_SOURCES and n > best_n:
+            best, best_n = it, n
+    if best:
+        log.info("Topik deep dive terpilih (%d sumber): %s",
+                 best_n + 1, best["title"][:60])
+    return best
+
+
+def run_deep_dive(items, existing, args):
+    """Mode --deep-dive: 1 topik terbesar -> analisis investigatif panjang."""
+    topic = pick_deep_dive_topic(items, existing)
+    if not topic:
+        log.info("Tidak ada topik yang memenuhi syarat deep dive "
+                 "(butuh >=%d sumber berbeda) — selesai.", DEEP_DIVE_MIN_SOURCES)
+        return 0
+    related = find_related(topic, items, max_related=DEEP_DIVE_MAX_RELATED)
+    log.info("Deep dive: %s | pendukung: %d (%s)",
+             topic["title"][:60], len(related),
+             ", ".join(r["source"] for r in related) or "-")
+    if args.dry_run:
+        log.info("[dry-run] deep dive dilewati (tidak panggil Groq).")
+        return 0
+    try:
+        text, model = groq_generate(topic, related, deep_dive=True)
+        title, body = parse_output(text)
+        if not title:
+            title = topic["title"][:90]
+        if len(body.split()) < 200:
+            log.warning("Deep dive terlalu pendek, dibuang: %s", title[:50])
+            return 0
+        save_article(title, body, topic["category"], 1 + len(related), model,
+                     deep_dive=True)
+    except Exception as e:
+        log.error("Deep dive gagal: %s", e)
+        return 0
+    log.info("=== Selesai: 1 deep dive ===")
+    return 0
+
 # ------------------------------------------------------------------ Groq
 
-def groq_generate(main_item, related):
+def groq_generate(main_item, related, deep_dive=False):
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
         log.error("GROQ_API_KEY tidak diset — hentikan.")
         sys.exit(1)
 
     bahan = [main_item] + related
+    sum_len = 600 if deep_dive else 350
     daftar = "\n".join(
-        f"- [{b['source']}] {b['title']}\n  Ringkasan: {b['summary'][:350]}"
+        f"- [{b['source']}] {b['title']}\n  Ringkasan: {b['summary'][:sum_len]}"
         for b in bahan
     )
-    user_prompt = (
-        "Bahan berita (kumpulkan FAKTANYA saja, jangan salin kalimatnya):\n\n"
-        f"{daftar}\n\n"
-        "Tugas: tulis artikel berita original dalam Bahasa Indonesia, gaya "
-        "kritis-analitis seperti jurnalis investigasi. JANGAN copy kalimat dari "
-        "sumber. Tambahkan konteks 'mengapa ini penting' dan 'apa yang tidak "
-        "dikatakan media mainstream'. 400-500 kata.\n\n"
-        "Format output WAJIB:\n"
-        "Baris pertama: JUDUL: <judul tajam, maks 90 karakter>\n"
-        "Baris kedua: kosong\n"
-        "Setelahnya: isi artikel dalam Markdown (boleh pakai ## subjudul, "
-        "**bold**, > quote). Jangan sertakan daftar sumber."
-    )
+    if deep_dive:
+        system_prompt = DEEP_DIVE_SYSTEM_PROMPT
+        user_prompt = (
+            "Bahan berita (kumpulkan FAKTANYA saja, jangan salin kalimatnya):\n\n"
+            f"{daftar}\n\n"
+            "Tugas: tulis ANALISIS MENDALAM investigatif 1000-1200 kata dalam "
+            "Bahasa Indonesia dengan struktur WAJIB berikut:\n"
+            "1. Latar belakang — akar masalah dan konteks historisnya\n"
+            "2. Kronologi — rangkaian peristiwa kunci secara runtut\n"
+            "3. Analisis multi-sudut pandang — lihat dari sisi semua pihak "
+            "yang terlibat dan terdampak\n"
+            "4. Data & fakta kunci — angka, nama, dan fakta terpenting "
+            "(hanya dari bahan yang diberikan)\n"
+            "5. Apa yang disembunyikan — motif, kepentingan, dan hal yang "
+            "tidak dikatakan media mainstream\n"
+            "6. Prediksi ke depan — skenario yang mungkin terjadi\n"
+            "7. Kesimpulan yang mencerdaskan — apa yang harus dipahami pembaca\n\n"
+            "Format output WAJIB:\n"
+            "Baris pertama: JUDUL: <judul tajam, maks 90 karakter>\n"
+            "Baris kedua: kosong\n"
+            "Setelahnya: isi artikel dalam Markdown (pakai ## subjudul sesuai "
+            "struktur di atas, **bold**, > quote). Jangan sertakan daftar sumber."
+        )
+    else:
+        system_prompt = SYSTEM_PROMPT
+        user_prompt = (
+            "Bahan berita (kumpulkan FAKTANYA saja, jangan salin kalimatnya):\n\n"
+            f"{daftar}\n\n"
+            "Tugas: tulis artikel berita original dalam Bahasa Indonesia, gaya "
+            "kritis-analitis seperti jurnalis investigasi. JANGAN copy kalimat dari "
+            "sumber. Tambahkan konteks 'mengapa ini penting' dan 'apa yang tidak "
+            "dikatakan media mainstream'. 400-500 kata.\n\n"
+            "Format output WAJIB:\n"
+            "Baris pertama: JUDUL: <judul tajam, maks 90 karakter>\n"
+            "Baris kedua: kosong\n"
+            "Setelahnya: isi artikel dalam Markdown (boleh pakai ## subjudul, "
+            "**bold**, > quote). Jangan sertakan daftar sumber."
+        )
 
     last_err = None
     for model in GROQ_MODELS:
@@ -273,11 +376,13 @@ def groq_generate(main_item, related):
                 json={
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
                     "temperature": 0.7,
-                    "max_tokens": 1600,
+                    "max_tokens": DEEP_DIVE_MAX_TOKENS if deep_dive else 1600,
+                    # reasoning model (gpt-oss): jangan habiskan token buat mikir
+                    **({"reasoning_effort": "low"} if "gpt-oss" in model else {}),
                 },
                 timeout=120,
             )
@@ -289,7 +394,8 @@ def groq_generate(main_item, related):
             text = r.json()["choices"][0]["message"]["content"].strip()
             wc = len(text.split())
             log.info("Groq OK (%s): %d kata", model, wc)
-            if wc < 300:
+            min_wc = 700 if deep_dive else 300
+            if wc < min_wc:
                 log.warning("Artikel terlalu pendek (%d kata), tetap disimpan", wc)
             return text, model
         except Exception as e:
@@ -323,7 +429,7 @@ def excerpt_of(body, n=160):
     return (txt[:n] + "…") if len(txt) > n else txt
 
 
-def save_article(title, body, category, n_sources, model):
+def save_article(title, body, category, n_sources, model, deep_dive=False):
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
     slug = slugify(title)
     base, i = slug, 2
@@ -340,6 +446,7 @@ def save_article(title, body, category, n_sources, model):
         f"sources_count: {n_sources}\n"
         f"model: {model}\n"
         "ai_generated: true\n"
+        f"{'deep_dive: true\n' if deep_dive else ''}"
         "---\n"
     )
     (ARTICLES_DIR / f"{slug}.md").write_text(
@@ -354,11 +461,17 @@ def main():
     ap.add_argument("--dry-run", action="store_true",
                     help="coba RSS + dedup tanpa panggil Groq/menyimpan")
     ap.add_argument("--max", type=int, default=MAX_ARTICLES_PER_RUN)
+    ap.add_argument("--deep-dive", action="store_true",
+                    help="mode deep dive: 1 analisis investigatif panjang "
+                         "(1000-1200 kata) dari topik multi-sumber terbesar")
     args = ap.parse_args()
     globals()["MAX_ARTICLES_PER_RUN"] = args.max
+    if args.deep_dive:
+        globals()["RECENCY_HOURS"] = DEEP_DIVE_RECENCY_HOURS
 
-    log.info("=== Nalar pipeline mulai (%s) ===",
-             datetime.now(WIB).strftime("%Y-%m-%d %H:%M WIB"))
+    log.info("=== Nalar pipeline mulai (%s)%s ===",
+             datetime.now(WIB).strftime("%Y-%m-%d %H:%M WIB"),
+             " [MODE DEEP DIVE]" if args.deep_dive else "")
     sources = load_sources()
     items = collect_items(sources)
     if not items:
@@ -367,6 +480,10 @@ def main():
 
     existing = load_existing()
     log.info("%d artikel sudah ada di repo", len(existing))
+
+    if args.deep_dive:
+        return run_deep_dive(items, existing, args)
+
     topics = pick_topics(items, existing)
     if not topics:
         log.info("Tidak ada topik baru — selesai.")
