@@ -143,7 +143,59 @@ def openverse_search(query, limit=5):
     return out
 
 
-# ---------------------------------------------------------------- ID->EN
+# ---------------------------------------------------------------- Wikipedia
+# v3: Wikipedia JADI SUMBER UTAMA. Lead image artikel Wikipedia dikurasi
+# editor — jauh lebih relevan daripada Commons search mentah.
+# Query Bahasa Indonesia di id.wikipedia untuk entitas lokal.
+
+def wikipedia_search(query, lang="id", limit=3):
+    """Cari lead image artikel Wikipedia.
+
+    Mengembalikan list dict: {url, title}. Hanya yang punya thumbnail.
+    """
+    url = f"https://{lang}.wikipedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "format": "json",
+        "generator": "search",
+        "gsrsearch": query,
+        "gsrlimit": limit,
+        "prop": "pageimages",
+        "formatversion": 2,
+        "pithumbsize": 800,
+    }
+    r = requests.get(url, params=params, headers=UA, timeout=TIMEOUT)
+    r.raise_for_status()
+    pages = (r.json().get("query") or {}).get("pages") or []
+    out = []
+    for p in pages:
+        thumb = (p.get("thumbnail") or {}).get("source")
+        if not thumb or not thumb.startswith("http"):
+            continue
+        out.append({"url": thumb, "title": p.get("title", "")})
+    return out
+
+
+def id_wiki_queries(title, category):
+    """Susun query Wikipedia Bahasa Indonesia dari judul.
+
+    Prioritas: istilah kamus yang muncul di judul (sinyal kuat),
+    lalu kata-kata panjang dari judul.
+    """
+    queries = []
+    low = (title or "").lower()
+    # istilah kamus yang muncul -> query langsung (mis. "dpr", "kucing")
+    hits = [k for k in ID_EN_PHOTO if k in low and len(k) >= 3]
+    # utamakan yang lebih panjang/spesifik dulu
+    for h in sorted(hits, key=len, reverse=True)[:2]:
+        queries.append(h)
+    # kata-kata panjang dari judul sebagai query umum
+    words = [w for w in re.findall(r"[a-zA-Z]{4,}", low)
+             if w not in ("yang", "dari", "dengan", "untuk", "pada",
+                          "adalah", "ini", "itu", "dan", "atau", "dalam")]
+    if words:
+        queries.append(" ".join(words[:4]))
+    return list(dict.fromkeys(queries))
 # Kamus istilah berita Indonesia -> Inggris untuk pencarian foto.
 # Dipakai backfill artikel lama (yang tidak punya image_keywords dari Groq).
 # Artikel BARU memakai keyword Inggris langsung dari Groq (lebih presisi).
@@ -228,6 +280,13 @@ def _credit(source_label, artist):
 
 def fetch_smart_image(title, category, keywords):
     """Cari foto asli berlisensi bebas untuk sebuah artikel.
+
+    Urutan (v2, teruji stabil):
+      1. Wikimedia Commons search — keyword Inggris (dari Groq/kamus).
+      2. Openverse — foto CC.
+
+    Wikipedia lead image TIDAK dipakai otomatis (hasil campur aduk di tes) —
+    hanya via fix manual untuk kasus spesifik.
 
     Returns:
         (url, credit, source) — source salah satu dari

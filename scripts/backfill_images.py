@@ -34,7 +34,7 @@ log = logging.getLogger("nalar.backfill")
 ROOT = Path(__file__).resolve().parent.parent
 ARTICLES_DIR = ROOT / "src" / "content" / "articles"
 
-REAL_SOURCES = ("wikimedia", "openverse")
+REAL_SOURCES = ("wikipedia", "wikimedia", "openverse")
 
 
 def sanitize(s, maxlen=200):
