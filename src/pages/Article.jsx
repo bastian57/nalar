@@ -1,7 +1,30 @@
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { categoryName, formatDate, getArticle, getByCategory } from '../lib/articles.js'
 import ArticleCard from '../components/ArticleCard.jsx'
 import ShareButtons from '../components/ShareButtons.jsx'
+import Giscus from '../components/Giscus.jsx'
+
+/** Bilah progres baca — fixed di atas, terisi sesuai scroll. */
+function ReadingProgress() {
+  const [w, setW] = useState(0)
+  useEffect(() => {
+    const onScroll = () => {
+      const el = document.documentElement
+      const total = el.scrollHeight - el.clientHeight
+      setW(total > 0 ? Math.min(100, (el.scrollTop / total) * 100) : 0)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  return (
+    <div
+      className="fixed left-0 top-0 z-50 h-1 bg-tinta-600 transition-[width] duration-100 dark:bg-tinta-400"
+      style={{ width: `${w}%` }}
+    />
+  )
+}
 
 export default function Article() {
   const { slug } = useParams()
@@ -27,17 +50,25 @@ export default function Article() {
 
   return (
     <main className="container-nalar py-10">
+      <ReadingProgress />
       <article className="mx-auto max-w-3xl">
         {article.thumbnail && (
-          <img
-            src={article.thumbnail}
-            alt={article.title}
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none'
-            }}
-            className="mb-8 aspect-video w-full rounded-xl object-cover shadow-md"
-          />
+          <figure className="mb-8">
+            <img
+              src={article.thumbnail}
+              alt={article.title}
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.closest('figure').style.display = 'none'
+              }}
+              className="aspect-video w-full rounded-xl object-cover shadow-md"
+            />
+            {article.photoCredit && (
+              <figcaption className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                Foto: {article.photoCredit}
+              </figcaption>
+            )}
+          </figure>
         )}
 
         <div className="flex items-center gap-3 text-xs">
@@ -74,6 +105,8 @@ export default function Article() {
         <div className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-800">
           <ShareButtons title={article.title} slug={article.slug} />
         </div>
+
+        <Giscus />
       </article>
 
       {related.length > 0 && (

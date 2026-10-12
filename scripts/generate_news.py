@@ -24,6 +24,8 @@ from urllib.parse import quote, urlparse
 import feedparser
 import requests
 
+from smart_image import fetch_smart_image
+
 # ------------------------------------------------------------------ config
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -466,7 +468,17 @@ def save_article(title, body, category, n_sources, model, deep_dive=False):
     while (ARTICLES_DIR / f"{slug}.md").exists():
         slug, i = f"{base}-{i}", i + 1
     date_wib = datetime.now(WIB).strftime("%Y-%m-%d")
-    thumbnail = make_thumbnail_url(title, category)
+    # Smart Image Engine: foto asli berlisensi bebas dulu, fallback AI.
+    kws = {w for w in keywords(title) if len(w) >= 4}
+    img_url, img_credit, img_source = fetch_smart_image(title, category, kws)
+    if img_url:
+        thumbnail = img_url
+        photo_credit = sanitize_frontmatter_value(img_credit, 120)
+        photo_source = img_source
+    else:
+        thumbnail = make_thumbnail_url(title, category)  # ilustrasi AI
+        photo_credit = "Ilustrasi AI / Pollinations"
+        photo_source = "ai"
     excerpt = sanitize_frontmatter_value(excerpt_of(body), 200)
     frontmatter = (
         "---\n"
@@ -476,6 +488,8 @@ def save_article(title, body, category, n_sources, model, deep_dive=False):
         f'excerpt: "{excerpt}"\n'
         f"slug: {slug}\n"
         f'thumbnail: "{thumbnail}"\n'
+        f'photo_credit: "{photo_credit}"\n'
+        f'photo_source: "{photo_source}"\n'
         f"sources_count: {n_sources}\n"
         f"model: {model}\n"
         "ai_generated: true\n"

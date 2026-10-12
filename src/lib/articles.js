@@ -133,6 +133,8 @@ const articles = Object.entries(rawModules)
       category: (meta.category || 'umum').toLowerCase(),
       excerpt: meta.excerpt || '',
       thumbnail: safeThumbnailUrl(meta.thumbnail),
+      photoCredit: meta.photo_credit || '',
+      photoSource: meta.photo_source || '',
       deepDive: meta.deep_dive === 'true' || meta.deep_dive === true,
       body,
       html: mdToHtml(body),

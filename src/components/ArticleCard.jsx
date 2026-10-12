@@ -14,7 +14,7 @@ export default function ArticleCard({ article, featured = false }) {
         featured ? 'md:col-span-2 md:flex-row' : ''
       }`}
     >
-      {/* thumbnail: gambar Pollinations, fallback gradient tipografis */}
+      {/* thumbnail: foto asli (Smart Image Engine) / ilustrasi AI, fallback gradient */}
       {article.thumbnail && imgOk ? (
         <div className={`overflow-hidden bg-neutral-100 dark:bg-neutral-800 ${thumbWrapCls}`}>
           <img
@@ -24,6 +24,11 @@ export default function ArticleCard({ article, featured = false }) {
             onError={() => setImgOk(false)}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          {article.photoCredit && (
+            <p className="truncate bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+              Foto: {article.photoCredit}
+            </p>
+          )}
         </div>
       ) : (
         <div
