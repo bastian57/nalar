@@ -3,6 +3,7 @@ title: "Ketika AI Menulis Berita: Siapa yang Menjamin Kebenarannya?"
 date: "2026-10-12"
 category: "teknologi"
 excerpt: "Kecerdasan buatan kini menulis ribuan artikel berita setiap hari. Cepat dan murah — tapi siapa yang bertanggung jawab ketika ia salah?"
+sample: true
 slug: "ai-menulis-berita"
 ---
 

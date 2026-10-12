@@ -3,6 +3,7 @@ title: "Contoh: Cara Kerja Nalar"
 date: 2026-10-12
 category: politik
 excerpt: "Artikel contoh format. Dihapus otomatis saat pipeline pertama jalan… atau biarkan sebagai penanda."
+sample: true
 slug: contoh-cara-kerja-nalar
 sources_count: 0
 model: manual

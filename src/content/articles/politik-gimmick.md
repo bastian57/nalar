@@ -3,6 +3,7 @@ title: "Politik Gimmick: Ketika Sensasi Mengalahkan Substansi"
 date: "2026-10-12"
 category: "politik"
 excerpt: "Blusukan dadakan, joget di TikTok, makan di warteg — politik Indonesia makin mirip industri hiburan. Siapa yang dirugikan?"
+sample: true
 slug: "politik-gimmick"
 ---
 

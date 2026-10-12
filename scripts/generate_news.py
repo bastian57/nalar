@@ -36,8 +36,8 @@ GROQ_MODELS = ["llama-3.3-70b-versatile", "qwen-qwq-32b"]
 
 MAX_ARTICLES_PER_RUN = 5
 MAX_PER_CATEGORY = 2
-RECENCY_HOURS = 36          # hanya berita < 36 jam
-SIMILARITY_THRESHOLD = 0.55  # judul mirip -> skip (anti duplikat)
+RECENCY_HOURS = 48          # hanya berita < 36 jam
+SIMILARITY_THRESHOLD = 0.80  # judul mirip -> skip (anti duplikat)
 MIN_KEYWORD_OVERLAP = 2     # syarat artikel "terkait"
 MAX_RELATED = 4             # maks artikel pendukung per topik
 
