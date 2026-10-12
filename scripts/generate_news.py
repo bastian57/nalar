@@ -447,20 +447,33 @@ def make_thumbnail_url(title, category):
     )
 
 
+def sanitize_frontmatter_value(s, maxlen=200):
+    """Bersihkan nilai untuk frontmatter YAML: buang newline, quote, dan
+    karakter kontrol agar tidak bisa inject field frontmatter lain."""
+    s = str(s or "")
+    s = s.replace("\r", " ").replace("\n", " ")
+    s = s.replace('"', "'").replace("\\", "")
+    s = re.sub(r"[\x00-\x1f\x7f]", "", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s[:maxlen]
+
+
 def save_article(title, body, category, n_sources, model, deep_dive=False):
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
+    title = sanitize_frontmatter_value(title, 120)
     slug = slugify(title)
     base, i = slug, 2
     while (ARTICLES_DIR / f"{slug}.md").exists():
         slug, i = f"{base}-{i}", i + 1
     date_wib = datetime.now(WIB).strftime("%Y-%m-%d")
     thumbnail = make_thumbnail_url(title, category)
+    excerpt = sanitize_frontmatter_value(excerpt_of(body), 200)
     frontmatter = (
         "---\n"
         f'title: "{title}"\n'
         f"date: {date_wib}\n"
         f"category: {category}\n"
-        f'excerpt: "{excerpt_of(body)}"\n'
+        f'excerpt: "{excerpt}"\n'
         f"slug: {slug}\n"
         f'thumbnail: "{thumbnail}"\n'
         f"sources_count: {n_sources}\n"

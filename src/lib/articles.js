@@ -114,6 +114,14 @@ function fileToSlug(path) {
   return base.replace(/\.md$/, '')
 }
 
+function safeThumbnailUrl(url) {
+  // Hanya izinkan http/https — tolak javascript:, data:, dll.
+  if (typeof url !== 'string') return ''
+  const t = url.trim()
+  if (/^https?:\/\//i.test(t)) return t
+  return ''
+}
+
 const articles = Object.entries(rawModules)
   .map(([path, raw]) => {
     const { meta, body } = parseFrontmatter(raw)
@@ -124,7 +132,7 @@ const articles = Object.entries(rawModules)
       date: meta.date || '',
       category: (meta.category || 'umum').toLowerCase(),
       excerpt: meta.excerpt || '',
-      thumbnail: meta.thumbnail || '',
+      thumbnail: safeThumbnailUrl(meta.thumbnail),
       deepDive: meta.deep_dive === 'true' || meta.deep_dive === true,
       body,
       html: mdToHtml(body),
