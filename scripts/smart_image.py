@@ -19,6 +19,7 @@ Dipakai oleh generate_news.py saat menyimpan artikel baru. Foto lama
 
 import logging
 import re
+import time
 from urllib.parse import quote
 
 import requests
@@ -44,6 +45,49 @@ CATEGORY_EN = {
     "global": "world news",
     "umum": "news press",
 }
+
+def _get_with_retry(url, params, timeout=TIMEOUT, max_retries=2):
+    """GET dengan retry otomatis saat kena 429 (rate limit)."""
+    last = None
+    for attempt in range(max_retries + 1):
+        try:
+            r = requests.get(url, params=params, headers=UA, timeout=timeout)
+        except Exception as e:
+            last = e
+            if attempt < max_retries:
+                time.sleep(2 * (attempt + 1))
+                continue
+            raise
+        if r.status_code == 429 and attempt < max_retries:
+            wait = 4 * (attempt + 1)
+            log.warning("smart_image: 429, tunggu %ds…", wait)
+            time.sleep(wait)
+            continue
+        r.raise_for_status()
+        return r
+    raise last or RuntimeError("GET gagal")
+
+
+def is_valid_image(url, timeout=8):
+    """Pastikan URL gambar benar-benar bisa diakses.
+
+    Cek HEAD dulu (cepat); kalau server menolak HEAD, coba GET 1KB.
+    Mencegah thumbnail broken kesimpen di artikel (kasus URL kepotong).
+    """
+    if not url or not url.startswith("http"):
+        return False
+    try:
+        r = requests.head(url, headers=UA, timeout=timeout,
+                          allow_redirects=True)
+        if r.status_code == 200:
+            ct = r.headers.get("Content-Type", "").lower()
+            return ct.startswith("image/") or "octet-stream" in ct
+        r = requests.get(url, headers={**UA, "Range": "bytes=0-1023"},
+                         timeout=timeout, stream=True)
+        return r.status_code in (200, 206)
+    except Exception:
+        return False
+
 
 _TAG_RE = re.compile(r"<[^>]+>")
 
@@ -96,8 +140,7 @@ def commons_search(query, limit=8):
         "iiprop": "url|extmetadata",
         "iiurlwidth": 800,          # thumbnail 800px (cukup untuk kartu)
     }
-    r = requests.get(url, params=params, headers=UA, timeout=TIMEOUT)
-    r.raise_for_status()
+    r = _get_with_retry(url, params)
     pages = (r.json().get("query") or {}).get("pages") or {}
     out = []
     for p in pages.values():
@@ -128,8 +171,7 @@ def openverse_search(query, limit=5):
         "page_size": limit,
         "filter_dead": True,
     }
-    r = requests.get(url, params=params, headers=UA, timeout=TIMEOUT)
-    r.raise_for_status()
+    r = _get_with_retry(url, params)
     out = []
     for it in (r.json().get("results") or []):
         img = it.get("url")
@@ -164,8 +206,7 @@ def wikipedia_search(query, lang="id", limit=3):
         "formatversion": 2,
         "pithumbsize": 800,
     }
-    r = requests.get(url, params=params, headers=UA, timeout=TIMEOUT)
-    r.raise_for_status()
+    r = _get_with_retry(url, params)
     pages = (r.json().get("query") or {}).get("pages") or []
     out = []
     for p in pages:
@@ -300,8 +341,12 @@ def fetch_smart_image(title, category, keywords):
             except Exception as e:  # noqa: BLE001 — satu sumber mati, lanjut
                 log.warning("smart_image: %s gagal untuk %r: %s", source_key, q, e)
                 continue
-            if results:
-                r = results[0]
+            # coba hingga 3 kandidat — validasi URL dulu, jangan ambil buta
+            for r in results[:3]:
+                if not is_valid_image(r["url"]):
+                    log.warning("smart_image: URL tidak valid, lewati: %s",
+                                r["url"][:70])
+                    continue
                 credit = _credit(label, r["artist"])
                 log.info("smart_image: %s -> %s (%s)", q, source_key, credit)
                 return r["url"], credit, source_key
