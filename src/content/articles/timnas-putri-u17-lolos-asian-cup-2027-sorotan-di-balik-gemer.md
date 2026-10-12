@@ -7,9 +7,9 @@ slug: timnas-putri-u17-lolos-asian-cup-2027-sorotan-di-balik-gemer
 sources_count: 4
 model: openai/gpt-oss-120b
 ai_generated: true
-thumbnail: "https://live.staticflickr.com/2503/4155647357_8668b002ea_b.jpg"
-photo_source: "openverse"
-photo_credit: "Openverse / sludgegulper"
+thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/2025_Indonesia_National_Football_Team_Badge.png/960px-2025_Indonesia_National_Football_Team_Badge.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+photo_source: "wikimedia"
+photo_credit: "Wikimedia Commons / Erigo Sports/Erspo"
 ---
 Timnas Putri Indonesia U‑17 berhasil menembus putaran final Piala Asia 2027 setelah menorehkan hasil sempurna di babak kualifikasi. Keberhasilan ini disambut hangat di media olahraga, namun di balik sorotan gemerlap terdapat dinamika yang lebih luas: kebijakan pemerintah dalam menggerakkan agenda pendidikan, teknologi, hingga diplomasi ekonomi‑pertahanan bersama Mesir.  
 

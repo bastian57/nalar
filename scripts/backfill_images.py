@@ -7,10 +7,11 @@ Untuk setiap .md di src/content/articles yang BELUM punya foto asli
 Smart Image Engine lalu update frontmatter:
   thumbnail, photo_credit, photo_source.
 
-- Idempotent: artikel yang sudah berfoto asli (wikimedia/openverse) dilewati.
-  Aman dijalankan berulang kali.
+- Idempotent: artikel yang sudah berfoto asli (wikimedia/openverse) dilewati,
+  kecuali --force.
 - --dry-run : tampilkan rencana tanpa menulis file.
 - --limit N : batasi jumlah artikel per run.
+- --force   : proses ulang SEMUA artikel (untuk upgrade ke keyword Inggris).
 
 Cara pakai (sekali saja, dari root repo):
     pip install requests
@@ -27,7 +28,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from smart_image import fetch_smart_image  # noqa: E402
+from smart_image import fetch_smart_image, id_to_en_keywords  # noqa: E402
 
 log = logging.getLogger("nalar.backfill")
 ROOT = Path(__file__).resolve().parent.parent
@@ -83,6 +84,8 @@ def main():
                     help="tampilkan rencana tanpa menulis file")
     ap.add_argument("--limit", type=int, default=0,
                     help="batasi jumlah artikel (0 = semua)")
+    ap.add_argument("--force", action="store_true",
+                    help="proses ulang semua artikel walau sudah berfoto")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -99,12 +102,13 @@ def main():
             log.warning("SKIP (format tidak dikenal): %s", path.name)
             skipped += 1
             continue
-        if get_field(meta_lines, "photo_source") in REAL_SOURCES:
+        if get_field(meta_lines, "photo_source") in REAL_SOURCES and not args.force:
             skipped += 1  # sudah berfoto asli
             continue
         title = get_field(meta_lines, "title")
         category = get_field(meta_lines, "category") or "umum"
-        kws = {w.lower() for w in re.findall(r"[a-zA-Z]{4,}", title or "")}
+        # v2: keyword Inggris via kamus ID->EN (jauh lebih relevan di Commons)
+        kws = id_to_en_keywords(title, category)
         url, credit, src = fetch_smart_image(title, category, kws)
         if not url:
             log.warning("GAGAL (tidak ketemu foto): %s", path.name)

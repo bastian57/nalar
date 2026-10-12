@@ -7,9 +7,9 @@ slug: kementan-rebut-penyuluh-pertanian-dari-daerah-antara-janji-p
 sources_count: 1
 model: openai/gpt-oss-120b
 ai_generated: true
-thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/99/Latest_Business_Hindi_News_%E2%80%93_Economy%2C_Market_%26_Finance_Updates.jpg/960px-Latest_Business_Hindi_News_%E2%80%93_Economy%2C_Market_%26_Finance_Updates.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+thumbnail: "https://upload.wikimedia.org/wikipedia/commons/e/e5/Announcement_of_Farmers_Conference_in_Philadelphia%2C_Mississippi_from_1929.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
 photo_source: "wikimedia"
-photo_credit: "Wikimedia Commons / Rajexpress1"
+photo_credit: "Wikimedia Commons / W E Perryman"
 ---
 ---
 

@@ -5,9 +5,9 @@ category: "teknologi"
 excerpt: "Kecerdasan buatan kini menulis ribuan artikel berita setiap hari. Cepat dan murah — tapi siapa yang bertanggung jawab ketika ia salah?"
 sample: true
 slug: "ai-menulis-berita"
-thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Artificial_Intelligence_Word_Cloud.png/960px-Artificial_Intelligence_Word_Cloud.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+thumbnail: "https://upload.wikimedia.org/wikipedia/commons/5/5d/African_Robot.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
 photo_source: "wikimedia"
-photo_credit: "Wikimedia Commons / Madhav-Malhotra-003"
+photo_credit: "Wikimedia Commons / ApexInfinity Games"
 ---
 Ruang redaksi di seluruh dunia sedang berubah diam-diam. Di balik portal-portal berita yang Anda baca setiap pagi, semakin banyak paragraf yang tidak pernah disentuh tangan manusia. Kecerdasan buatan kini merangkum, menulis, bahkan menyunting berita — lebih cepat dan jauh lebih murah daripada wartawan mana pun.
 

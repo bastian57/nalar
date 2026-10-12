@@ -7,9 +7,9 @@ slug: satpol-pp-dibentur-pekerja-proyek-di-jaksel-gubernur-pramono
 sources_count: 3
 model: openai/gpt-oss-120b
 ai_generated: true
-thumbnail: "https://live.staticflickr.com/7573/15423726633_ca769495de_b.jpg"
-photo_source: "openverse"
-photo_credit: "Openverse / AK Rockefeller"
+thumbnail: "https://upload.wikimedia.org/wikipedia/commons/8/83/Davidcampbell.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+photo_source: "wikimedia"
+photo_credit: "Wikimedia Commons"
 ---
 **Jakarta Selatan, 12 Oktober 2026** – Insiden pemukulan anggota Satpol PP oleh sekelompok pekerja proyek di kawasan Bulungan, Jakarta Selatan, kembali memicu sorotan publik. Gubernur DKI Jakarta, Pramono Anung, menegaskan bahwa kasus ini harus diproses secara hukum, menolak segala bentuk “premanisme” yang mengancam otoritas aparat. Namun di balik pernyataan tegasnya, terdapat dinamika politik, kepentingan bisnis, dan kebijakan penegakan hukum yang jarang diungkap media arus utama.
 

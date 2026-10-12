@@ -7,9 +7,9 @@ slug: tidur-berbagi-selimut-dengan-kucing-bahaya-tersembunyi-di-ba
 sources_count: 1
 model: openai/gpt-oss-120b
 ai_generated: true
-thumbnail: "https://live.staticflickr.com/7573/15423726633_ca769495de_b.jpg"
-photo_source: "openverse"
-photo_credit: "Openverse / AK Rockefeller"
+thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/2014_-_Vancouver_-_Went_to_Sleep_with_2_Red_Pumps%2C_Woke_up_with_1_%2815029636797%29.jpg/960px-2014_-_Vancouver_-_Went_to_Sleep_with_2_Red_Pumps%2C_Woke_up_with_1_%2815029636797%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+photo_source: "wikimedia"
+photo_credit: "Wikimedia Commons / Ted McGrath from Vancouver, BC, Canada"
 ---
 &nbsp;
 

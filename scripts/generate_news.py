@@ -300,14 +300,14 @@ def run_deep_dive(items, existing, args):
         return 0
     try:
         text, model = groq_generate(topic, related, deep_dive=True)
-        title, body = parse_output(text)
+        title, body, image_keywords = parse_output(text)
         if not title:
             title = topic["title"][:90]
         if len(body.split()) < 200:
             log.warning("Deep dive terlalu pendek, dibuang: %s", title[:50])
             return 0
         save_article(title, body, topic["category"], 1 + len(related), model,
-                     deep_dive=True)
+                     deep_dive=True, image_keywords=image_keywords)
     except Exception as e:
         log.error("Deep dive gagal: %s", e)
         return 0
@@ -349,7 +349,10 @@ def groq_generate(main_item, related, deep_dive=False):
             "Baris pertama: JUDUL: <judul tajam, maks 90 karakter>\n"
             "Baris kedua: kosong\n"
             "Setelahnya: isi artikel dalam Markdown (pakai ## subjudul sesuai "
-            "struktur di atas, **bold**, > quote). Jangan sertakan daftar sumber."
+            "struktur di atas, **bold**, > quote). Jangan sertakan daftar sumber.\n"
+            "Baris paling akhir: FOTO: <3 kata kunci BAHASA INGGRIS yang "
+            "spesifik untuk mencari foto berita relevan, dipisah koma — "
+            "contoh: indonesian parliament building, jakarta>"
         )
     else:
         system_prompt = SYSTEM_PROMPT
@@ -364,7 +367,10 @@ def groq_generate(main_item, related, deep_dive=False):
             "Baris pertama: JUDUL: <judul tajam, maks 90 karakter>\n"
             "Baris kedua: kosong\n"
             "Setelahnya: isi artikel dalam Markdown (boleh pakai ## subjudul, "
-            "**bold**, > quote). Jangan sertakan daftar sumber."
+            "**bold**, > quote). Jangan sertakan daftar sumber.\n"
+            "Baris paling akhir: FOTO: <3 kata kunci BAHASA INGGRIS yang "
+            "spesifik untuk mencari foto berita relevan, dipisah koma — "
+            "contoh: artificial intelligence robot, technology>"
         )
 
     last_err = None
@@ -409,9 +415,10 @@ def groq_generate(main_item, related, deep_dive=False):
 # ------------------------------------------------------------------ simpan
 
 def parse_output(text):
-    """Pisahkan JUDUL: ... dari badan artikel."""
+    """Pisahkan JUDUL: ..., badan artikel, dan FOTO: (keyword Inggris)."""
     lines = text.split("\n")
     title = ""
+    image_keywords = ""
     body_start = 0
     for i, ln in enumerate(lines[:4]):
         m = re.match(r"^\s*JUDUL\s*:\s*(.+?)\s*$", ln, re.I)
@@ -419,10 +426,17 @@ def parse_output(text):
             title = m.group(1).strip().strip("\"'")
             body_start = i + 1
             break
+    for ln in lines[body_start:]:
+        m = re.match(r"^\s*FOTO\s*:\s*(.+?)\s*$", ln, re.I)
+        if m:
+            image_keywords = m.group(1).strip().strip("\"'")
+            break
     body = "\n".join(lines[body_start:]).strip()
+    # buang baris FOTO: dari body agar tidak tampil di artikel
+    body = re.sub(r"(?m)^\s*FOTO\s*:.*$", "", body).strip()
     # buang baris pembuka "# judul" duplikat bila model tetap menulisnya
     body = re.sub(r"^#\s+.*\n", "", body, count=1).lstrip()
-    return title, body
+    return title, body, image_keywords
 
 
 def excerpt_of(body, n=160):
@@ -460,7 +474,8 @@ def sanitize_frontmatter_value(s, maxlen=200):
     return s[:maxlen]
 
 
-def save_article(title, body, category, n_sources, model, deep_dive=False):
+def save_article(title, body, category, n_sources, model, deep_dive=False,
+                 image_keywords=""):
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
     title = sanitize_frontmatter_value(title, 120)
     slug = slugify(title)
@@ -468,9 +483,15 @@ def save_article(title, body, category, n_sources, model, deep_dive=False):
     while (ARTICLES_DIR / f"{slug}.md").exists():
         slug, i = f"{base}-{i}", i + 1
     date_wib = datetime.now(WIB).strftime("%Y-%m-%d")
-    # Smart Image Engine: foto asli berlisensi bebas dulu, fallback AI.
-    kws = {w for w in keywords(title) if len(w) >= 4}
-    img_url, img_credit, img_source = fetch_smart_image(title, category, kws)
+    # Smart Image Engine: utamakan keyword Inggris dari Groq (spesifik topik),
+    # fallback ke kata kunci judul bila model tidak mengembalikan FOTO:.
+    en_kws = [k.strip().lower() for k in image_keywords.split(",") if k.strip()]
+    if en_kws:
+        img_url, img_credit, img_source = fetch_smart_image(
+            title, category, set(en_kws))
+    else:
+        kws = {w for w in keywords(title) if len(w) >= 4}
+        img_url, img_credit, img_source = fetch_smart_image(title, category, kws)
     if img_url:
         thumbnail = img_url
         photo_credit = sanitize_frontmatter_value(img_credit, 120)
@@ -480,6 +501,7 @@ def save_article(title, body, category, n_sources, model, deep_dive=False):
         photo_credit = "Ilustrasi AI / Pollinations"
         photo_source = "ai"
     excerpt = sanitize_frontmatter_value(excerpt_of(body), 200)
+    img_kw_fm = sanitize_frontmatter_value(image_keywords, 120)
     frontmatter = (
         "---\n"
         f'title: "{title}"\n'
@@ -490,6 +512,7 @@ def save_article(title, body, category, n_sources, model, deep_dive=False):
         f'thumbnail: "{thumbnail}"\n'
         f'photo_credit: "{photo_credit}"\n'
         f'photo_source: "{photo_source}"\n'
+        f'image_keywords: "{img_kw_fm}"\n'
         f"sources_count: {n_sources}\n"
         f"model: {model}\n"
         "ai_generated: true\n"
@@ -546,13 +569,14 @@ def main():
             continue
         try:
             text, model = groq_generate(it, related)
-            title, body = parse_output(text)
+            title, body, image_keywords = parse_output(text)
             if not title:
                 title = it["title"][:90]
             if len(body.split()) < 80:
                 log.warning("Body terlalu pendek, lewati: %s", title[:50])
                 continue
-            save_article(title, body, it["category"], 1 + len(related), model)
+            save_article(title, body, it["category"], 1 + len(related), model,
+                         image_keywords=image_keywords)
             made += 1
         except Exception as e:
             log.error("Gagal proses topik '%s': %s", it["title"][:50], e)

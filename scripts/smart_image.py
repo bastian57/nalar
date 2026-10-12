@@ -56,6 +56,9 @@ def _strip_html(s):
 def _clean_credit(s, maxlen=120):
     s = _strip_html(s)
     s = re.sub(r"\s+", " ", s).strip()
+    # buang "unknown author" — bukan kredit yang berguna, tampilkan sumber saja
+    if "unknown" in s.lower():
+        return ""
     # buang karakter yang bisa merusak frontmatter YAML
     s = s.replace('"', "'").replace("\\", "").replace("\n", " ")
     s = re.sub(r"[\x00-\x1f\x7f]", "", s)
@@ -140,7 +143,59 @@ def openverse_search(query, limit=5):
     return out
 
 
-# ---------------------------------------------------------------- main
+# ---------------------------------------------------------------- ID->EN
+# Kamus istilah berita Indonesia -> Inggris untuk pencarian foto.
+# Dipakai backfill artikel lama (yang tidak punya image_keywords dari Groq).
+# Artikel BARU memakai keyword Inggris langsung dari Groq (lebih presisi).
+ID_EN_PHOTO = {
+    # politik & pemerintahan
+    "dpr": "indonesian parliament", "parlemen": "parliament",
+    "presiden": "indonesian president", "istana": "presidential palace jakarta",
+    "pemilu": "indonesia election voting", "pilkada": "indonesia local election",
+    "menteri": "minister government", "gubernur": "governor",
+    "bupati": "regent indonesia", "walikota": "mayor city",
+    "kpk": "anti-corruption", "korupsi": "corruption",
+    "polisi": "indonesian police", "tni": "indonesian military army",
+    "satpol": "public order officer", "demo": "protest demonstration",
+    # ekonomi
+    "emas": "gold bullion", "rupiah": "indonesian rupiah currency",
+    "saham": "stock market trading", "inflasi": "inflation economy",
+    "umkm": "small business indonesia", "pertanian": "agriculture rice field",
+    "nelayan": "fisherman boat", "pasar": "traditional market",
+    "kementan": "agriculture ministry", "mentan": "agriculture minister",
+    "penyuluh": "agricultural extension worker",
+    # teknologi
+    "kecerdasan": "artificial intelligence robot", "robot": "robot",
+    "ai": "artificial intelligence robot",
+    "siber": "cybersecurity", "digital": "digital technology",
+    "startup": "startup office", "internet": "internet network",
+    # bencana & sosial
+    "gempa": "earthquake", "banjir": "flood", "kebakaran": "fire",
+    "longsor": "landslide",
+    # umum
+    "sekolah": "school indonesia", "kampus": "university",
+    "masjid": "mosque", "gereja": "church",
+    "sepak": "football soccer", "timnas": "indonesia national football team",
+    "stadion": "stadium", "mandalika": "mandalika circuit",
+    "kucing": "cat", "hewan": "pet animal", "peliharaan": "pet",
+    "tidur": "sleeping bed", "kesehatan": "health hospital",
+}
+
+
+def id_to_en_keywords(title, category):
+    """Terjemahkan kata kunci judul Indonesia -> Inggris untuk cari foto.
+
+    Mengembalikan set keyword Inggris. Dipakai backfill artikel lama.
+    """
+    out = set()
+    low = (title or "").lower()
+    for id_word, en in ID_EN_PHOTO.items():
+        if id_word in low:
+            out.update(en.split())
+    # tambah keyword kategori sebagai jaring pengaman
+    cat_q = CATEGORY_EN.get((category or "umum").lower(), "")
+    out.update(cat_q.split())
+    return {w for w in out if len(w) >= 3}
 
 # NOTE 2026-10-12: Unsplash (napi endpoint, tanpa key) DICORET dari chain —
 # sekarang dipagari bot-check ("Making sure you're not a bot", HTTP 401)
