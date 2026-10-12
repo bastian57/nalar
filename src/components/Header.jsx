@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 const NAV = [
   { to: '/', label: 'Beranda' },
@@ -29,9 +29,16 @@ function useTheme() {
 export default function Header() {
   const [dark, setDark] = useTheme()
   const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
   const { pathname } = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => setOpen(false), [pathname])
+
+  const doSearch = (e) => {
+    e.preventDefault()
+    if (q.trim()) navigate(`/cari?q=${encodeURIComponent(q.trim())}`)
+  }
 
   const linkCls = ({ isActive }) =>
     `px-3 py-2 text-sm font-medium rounded transition-colors ${
@@ -46,13 +53,19 @@ export default function Header() {
       <div className="h-1 bg-tinta-600" />
       <div className="container-nalar flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src="/nalar-icon.jpg" alt="Nalar" className="h-10 w-10 rounded-full object-cover ring-2 ring-tinta-600/30" />
-          <span className="font-serif text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
-            Nalar
-            <span className="text-tinta-600 dark:text-tinta-400">.</span>
-          </span>
-          <span className="hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400 sm:inline">
-            Kritis &amp; Cerdas
+          <img
+            src="/nalar-icon.jpg"
+            alt="Nalar"
+            className="h-10 w-10 rounded-full object-cover ring-2 ring-tinta-600/30"
+          />
+          <span className="flex items-baseline gap-2">
+            <span className="font-serif text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
+              Nalar
+              <span className="text-tinta-600 dark:text-tinta-400">.</span>
+            </span>
+            <span className="hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400 sm:inline">
+              Kritis &amp; Cerdas
+            </span>
           </span>
         </Link>
 
@@ -66,6 +79,15 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* search desktop */}
+          <form onSubmit={doSearch} className="hidden md:block">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Cari berita…"
+              className="w-44 rounded-full border border-neutral-300 bg-transparent px-4 py-1.5 text-sm text-neutral-800 placeholder-neutral-400 outline-none transition-all focus:w-60 focus:border-tinta-600 dark:border-neutral-700 dark:text-neutral-200 dark:focus:border-tinta-400"
+            />
+          </form>
           {/* toggle dark mode */}
           <button
             onClick={() => setDark(!dark)}
@@ -99,6 +121,14 @@ export default function Header() {
       {/* nav mobile */}
       {open && (
         <nav className="border-t border-neutral-200 bg-kertas px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950 md:hidden">
+          <form onSubmit={doSearch} className="mb-2">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Cari berita…"
+              className="w-full rounded-full border border-neutral-300 bg-transparent px-4 py-2 text-sm text-neutral-800 placeholder-neutral-400 outline-none focus:border-tinta-600 dark:border-neutral-700 dark:text-neutral-200 dark:focus:border-tinta-400"
+            />
+          </form>
           <div className="flex flex-col gap-1">
             {NAV.map((n) => (
               <NavLink

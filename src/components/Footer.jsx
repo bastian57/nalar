@@ -24,6 +24,7 @@ export default function Footer() {
             <li><Link className="hover:text-tinta-600 dark:hover:text-tinta-400" to="/kategori/teknologi">Teknologi</Link></li>
             <li><Link className="hover:text-tinta-600 dark:hover:text-tinta-400" to="/metodologi">Metodologi</Link></li>
             <li><Link className="hover:text-tinta-600 dark:hover:text-tinta-400" to="/tentang">Tentang Nalar</Link></li>
+            <li><a className="hover:text-tinta-600 dark:hover:text-tinta-400" href="/rss.xml" target="_blank" rel="noopener">📡 RSS Feed</a></li>
           </ul>
         </div>
         <div>

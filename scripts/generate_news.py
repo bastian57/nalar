@@ -545,6 +545,17 @@ def main():
         time.sleep(3)  # jaga rate limit Groq free tier
 
     log.info("=== Selesai: %d artikel baru ===", made)
+
+    # Generate RSS + sitemap (selalu, walau 0 artikel baru)
+    for gen in ("generate_rss.py", "generate_sitemap.py"):
+        try:
+            import subprocess
+            r = subprocess.run(
+                [sys.executable, str(Path(__file__).parent / gen)],
+                capture_output=True, text=True, timeout=60)
+            log.info("%s: %s", gen, r.stdout.strip() or "OK")
+        except Exception as e:
+            log.warning("%s gagal: %s", gen, e)
     return 0
 
 

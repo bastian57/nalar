@@ -7,6 +7,7 @@ import Article from './pages/Article.jsx'
 import Category from './pages/Category.jsx'
 import Metodologi from './pages/Metodologi.jsx'
 import Tentang from './pages/Tentang.jsx'
+import Search from './pages/Search.jsx'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/kategori/:cat" element={<Category />} />
           <Route path="/metodologi" element={<Metodologi />} />
           <Route path="/tentang" element={<Tentang />} />
+          <Route path="/cari" element={<Search />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

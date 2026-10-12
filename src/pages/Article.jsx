@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { categoryName, formatDate, getArticle, getByCategory } from '../lib/articles.js'
 import ArticleCard from '../components/ArticleCard.jsx'
+import ShareButtons from '../components/ShareButtons.jsx'
 
 export default function Article() {
   const { slug } = useParams()
@@ -68,6 +69,10 @@ export default function Article() {
             analisis oleh Nalar. Baca <Link className="text-tinta-600 underline dark:text-tinta-400" to="/metodologi">metodologi kami</Link> untuk
             memahami cara kerja redaksi.
           </p>
+        </div>
+
+        <div className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+          <ShareButtons title={article.title} slug={article.slug} />
         </div>
       </article>
 
