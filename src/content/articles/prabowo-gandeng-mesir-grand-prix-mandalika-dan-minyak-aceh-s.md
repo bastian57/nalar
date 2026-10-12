@@ -7,7 +7,7 @@ slug: prabowo-gandeng-mesir-grand-prix-mandalika-dan-minyak-aceh-s
 sources_count: 5
 model: openai/gpt-oss-120b
 ai_generated: true
-thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Prabowo_Subianto_2024_official_portrait.jpg/800px-Prabowo_Subianto_2024_official_portrait.jpg"
+thumbnail: "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Prabowo_Subianto_2024_official_portrait.jpg/960px-Prabowo_Subianto_2024_official_portrait.jpg"
 photo_source: "wikipedia"
 photo_credit: "Wikipedia / Prabowo Subianto"
 ---
