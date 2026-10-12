@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { CATEGORIES, getArticles } from '../lib/articles.js'
 import ArticleCard from '../components/ArticleCard.jsx'
 import Trending from '../components/Trending.jsx'
+import SeoMeta from '../components/SeoMeta.jsx'
+import Newsletter from '../components/Newsletter.jsx'
 
 export default function Home() {
   const articles = getArticles()
@@ -9,6 +11,7 @@ export default function Home() {
 
   return (
     <main className="container-nalar py-10">
+      <SeoMeta />
       {/* hero */}
       <section className="mb-10 border-b-2 border-tinta-600 pb-8">
         <p className="text-xs font-bold uppercase tracking-[0.25em] text-tinta-600 dark:text-tinta-400">
@@ -68,6 +71,11 @@ export default function Home() {
           !featured && <p className="text-neutral-500">Belum ada artikel lain.</p>
         )}
       </section>
+
+      {/* newsletter */}
+      <div className="mt-12">
+        <Newsletter />
+      </div>
     </main>
   )
 }

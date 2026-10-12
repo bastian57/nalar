@@ -20,7 +20,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parent.parent
 ARTICLES_DIR = ROOT / "src" / "content" / "articles"
-SITE = "https://nalar-8ec.pages.dev"
+SITE = "https://nalar-news.pages.dev"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
                     datefmt="%H:%M:%S")

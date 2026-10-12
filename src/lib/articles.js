@@ -136,11 +136,13 @@ const articles = Object.entries(rawModules)
       photoCredit: meta.photo_credit || '',
       photoSource: meta.photo_source || '',
       deepDive: meta.deep_dive === 'true' || meta.deep_dive === true,
+      sample: meta.sample === 'true' || meta.sample === true,
       body,
       html: mdToHtml(body),
       readingMinutes: Math.max(1, Math.round(body.split(/\s+/).length / 200)),
     }
   })
+  .filter((a) => !a.sample) // sembunyikan artikel contoh dari publik
   .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
 
 export const CATEGORIES = [

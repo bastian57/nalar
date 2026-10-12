@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { CATEGORIES, categoryName, getByCategory } from '../lib/articles.js'
 import ArticleCard from '../components/ArticleCard.jsx'
+import SeoMeta from '../components/SeoMeta.jsx'
 
 export default function Category() {
   const { cat } = useParams()
@@ -10,6 +11,11 @@ export default function Category() {
 
   return (
     <main className="container-nalar py-10">
+      <SeoMeta
+        title={`Kategori ${categoryName(slug)}`}
+        description={meta?.desc || `Berita ${categoryName(slug)} terbaru dengan analisis tajam.`}
+        url={`https://nalar-news.pages.dev/kategori/${slug}`}
+      />
       <p className="text-xs font-bold uppercase tracking-[0.25em] text-tinta-600 dark:text-tinta-400">
         Kategori
       </p>

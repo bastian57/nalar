@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parent.parent
 ARTICLES_DIR = ROOT / "src" / "content" / "articles"
 OUT = ROOT / "public" / "sitemap.xml"
-SITE = "https://nalar-8ec.pages.dev"
+SITE = "https://nalar-news.pages.dev"
 
 STATIC = ["", "/metodologi", "/tentang", "/cari",
           "/kategori/politik", "/kategori/teknologi",

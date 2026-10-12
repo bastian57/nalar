@@ -8,7 +8,7 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parent.parent
 ARTICLES_DIR = ROOT / "src" / "content" / "articles"
 OUT = ROOT / "public" / "rss.xml"
-SITE = "https://nalar-8ec.pages.dev"
+SITE = "https://nalar-news.pages.dev"
 
 def parse_frontmatter(text):
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n", text, re.S)

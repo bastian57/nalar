@@ -4,6 +4,7 @@ import { categoryName, formatDate, getArticle, getByCategory } from '../lib/arti
 import ArticleCard from '../components/ArticleCard.jsx'
 import ShareButtons from '../components/ShareButtons.jsx'
 import Giscus from '../components/Giscus.jsx'
+import SeoMeta from '../components/SeoMeta.jsx'
 
 /** Bilah progres baca — fixed di atas, terisi sesuai scroll. */
 function ReadingProgress() {
@@ -50,6 +51,13 @@ export default function Article() {
 
   return (
     <main className="container-nalar py-10">
+      <SeoMeta
+        title={article.title}
+        description={article.excerpt}
+        image={article.thumbnail}
+        url={`https://nalar-news.pages.dev/artikel/${article.slug}`}
+        type="article"
+      />
       <ReadingProgress />
       <article className="mx-auto max-w-3xl">
         {article.thumbnail && (

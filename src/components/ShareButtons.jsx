@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 export default function ShareButtons({ title, slug }) {
   const [copied, setCopied] = useState(false)
-  const url = `https://nalar-8ec.pages.dev/artikel/${slug}`
+  const url = `https://nalar-news.pages.dev/artikel/${slug}`
   const text = encodeURIComponent(title)
 
   const copyLink = async () => {
