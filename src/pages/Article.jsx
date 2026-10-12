@@ -27,6 +27,18 @@ export default function Article() {
   return (
     <main className="container-nalar py-10">
       <article className="mx-auto max-w-3xl">
+        {article.thumbnail && (
+          <img
+            src={article.thumbnail}
+            alt={article.title}
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+            className="mb-8 aspect-video w-full rounded-xl object-cover shadow-md"
+          />
+        )}
+
         <div className="flex items-center gap-3 text-xs">
           <Link
             to={`/kategori/${article.category}`}

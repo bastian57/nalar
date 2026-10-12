@@ -124,6 +124,7 @@ const articles = Object.entries(rawModules)
       date: meta.date || '',
       category: (meta.category || 'umum').toLowerCase(),
       excerpt: meta.excerpt || '',
+      thumbnail: meta.thumbnail || '',
       deepDive: meta.deep_dive === 'true' || meta.deep_dive === true,
       body,
       html: mdToHtml(body),

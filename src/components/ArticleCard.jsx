@@ -1,7 +1,12 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { categoryName, formatDate } from '../lib/articles.js'
 
 export default function ArticleCard({ article, featured = false }) {
+  const [imgOk, setImgOk] = useState(!!article.thumbnail)
+
+  const thumbWrapCls = featured ? 'md:w-2/5 shrink-0' : 'h-36'
+
   return (
     <Link
       to={`/artikel/${article.slug}`}
@@ -9,16 +14,26 @@ export default function ArticleCard({ article, featured = false }) {
         featured ? 'md:col-span-2 md:flex-row' : ''
       }`}
     >
-      {/* thumbnail tipografis */}
-      <div
-        className={`flex items-center justify-center bg-gradient-to-br from-tinta-700 via-tinta-600 to-neutral-900 p-6 ${
-          featured ? 'md:w-2/5' : 'h-36'
-        }`}
-      >
-        <span className="text-center font-serif text-lg font-bold leading-snug text-white line-clamp-4">
-          {article.title}
-        </span>
-      </div>
+      {/* thumbnail: gambar Pollinations, fallback gradient tipografis */}
+      {article.thumbnail && imgOk ? (
+        <div className={`overflow-hidden bg-neutral-100 dark:bg-neutral-800 ${thumbWrapCls}`}>
+          <img
+            src={article.thumbnail}
+            alt={article.title}
+            loading="lazy"
+            onError={() => setImgOk(false)}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      ) : (
+        <div
+          className={`flex items-center justify-center bg-gradient-to-br from-tinta-700 via-tinta-600 to-neutral-900 p-6 ${thumbWrapCls}`}
+        >
+          <span className="text-center font-serif text-lg font-bold leading-snug text-white line-clamp-4">
+            {article.title}
+          </span>
+        </div>
+      )}
       <div className={`flex flex-1 flex-col p-5 ${featured ? 'md:p-8' : ''}`}>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {article.deepDive && (

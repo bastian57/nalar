@@ -19,7 +19,7 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import feedparser
 import requests
@@ -429,6 +429,24 @@ def excerpt_of(body, n=160):
     return (txt[:n] + "…") if len(txt) > n else txt
 
 
+def make_thumbnail_url(title, category):
+    """Generate URL thumbnail via Pollinations.ai (gratis, tanpa API key).
+
+    Prompt dibangun dari judul + kategori, di-URL-encode penuh.
+    """
+    kws = sorted({w for w in keywords(title) if len(w) >= 4})[:5]
+    kw_str = ", ".join(kws) if kws else title[:40]
+    prompt = (
+        f"editorial news illustration, {category}, {kw_str}, "
+        "dramatic lighting, professional journalism style, no text"
+    )
+    encoded = quote(prompt, safe="")
+    return (
+        "https://image.pollinations.ai/prompt/"
+        f"{encoded}?width=800&height=450&nologo=true&model=flux"
+    )
+
+
 def save_article(title, body, category, n_sources, model, deep_dive=False):
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
     slug = slugify(title)
@@ -436,6 +454,7 @@ def save_article(title, body, category, n_sources, model, deep_dive=False):
     while (ARTICLES_DIR / f"{slug}.md").exists():
         slug, i = f"{base}-{i}", i + 1
     date_wib = datetime.now(WIB).strftime("%Y-%m-%d")
+    thumbnail = make_thumbnail_url(title, category)
     frontmatter = (
         "---\n"
         f'title: "{title}"\n'
@@ -443,6 +462,7 @@ def save_article(title, body, category, n_sources, model, deep_dive=False):
         f"category: {category}\n"
         f'excerpt: "{excerpt_of(body)}"\n'
         f"slug: {slug}\n"
+        f'thumbnail: "{thumbnail}"\n'
         f"sources_count: {n_sources}\n"
         f"model: {model}\n"
         "ai_generated: true\n"
