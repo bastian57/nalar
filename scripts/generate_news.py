@@ -32,7 +32,7 @@ SOURCES_FILE = Path(__file__).resolve().parent / "rss_sources.json"
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 # Model utama + fallback (coba berurutan bila 429/gagal)
-GROQ_MODELS = ["llama-3.3-70b-versatile", "qwen-qwq-32b"]
+GROQ_MODELS = ["qwen/qwen3-32b", "openai/gpt-oss-120b"]
 
 MAX_ARTICLES_PER_RUN = 5
 MAX_PER_CATEGORY = 2
