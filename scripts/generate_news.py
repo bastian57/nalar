@@ -950,8 +950,8 @@ def save_article(title, body, category, n_sources, model, deep_dive=False,
         f"sources_count: {n_sources}\n"
         f"model: {model}\n"
         "ai_generated: true\n"
-        f"{'deep_dive: true\n' if deep_dive else ''}"
-        "---\n"
+        + ("deep_dive: true\n" if deep_dive else "")
+        + "---\n"
     )
     (ARTICLES_DIR / f"{slug}.md").write_text(
         frontmatter + "\n" + body.strip() + "\n", encoding="utf-8")
