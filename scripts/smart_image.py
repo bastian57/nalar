@@ -5,7 +5,8 @@ Nalar Smart Image Engine — foto asli berlisensi bebas untuk thumbnail artikel.
 Urutan pencarian (berhenti di yang pertama dapat hasil):
   1. Wikimedia Commons API  — foto editorial asli, lisensi CC / domain publik
   2. Openverse API          — agregator foto berlisensi CC
-  3. (fallback di pemanggil) Pollinations.ai — ilustrasi AI
+  3. (fallback di pemanggil) Pollinations.ai — ilustrasi AI dengan deskripsi
+     visual detail dari Groq (GAMBAR:)
 
 Semua sumber di atas LEGAL untuk dipakai ulang tanpa bayar.
 
@@ -322,7 +323,7 @@ def _credit(source_label, artist):
 def fetch_smart_image(title, category, keywords):
     """Cari foto asli berlisensi bebas untuk sebuah artikel.
 
-    Urutan (v2, teruji stabil):
+    Urutan (v3):
       1. Wikimedia Commons search — keyword Inggris (dari Groq/kamus).
       2. Openverse — foto CC.
 

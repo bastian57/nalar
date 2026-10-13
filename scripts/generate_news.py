@@ -300,14 +300,15 @@ def run_deep_dive(items, existing, args):
         return 0
     try:
         text, model = groq_generate(topic, related, deep_dive=True)
-        title, body, image_keywords = parse_output(text)
+        title, body, image_keywords, image_desc = parse_output(text)
         if not title:
             title = topic["title"][:90]
         if len(body.split()) < 200:
             log.warning("Deep dive terlalu pendek, dibuang: %s", title[:50])
             return 0
         save_article(title, body, topic["category"], 1 + len(related), model,
-                     deep_dive=True, image_keywords=image_keywords)
+                     deep_dive=True, image_keywords=image_keywords,
+                     image_desc=image_desc)
     except Exception as e:
         log.error("Deep dive gagal: %s", e)
         return 0
@@ -352,7 +353,14 @@ def groq_generate(main_item, related, deep_dive=False):
             "struktur di atas, **bold**, > quote). Jangan sertakan daftar sumber.\n"
             "Baris paling akhir: FOTO: <3 kata kunci BAHASA INGGRIS yang "
             "spesifik untuk mencari foto berita relevan, dipisah koma — "
-            "contoh: indonesian parliament building, jakarta>"
+            "contoh: indonesian parliament building, jakarta>\n"
+            "Baris SEBELUM TERAKHIR (sebelum FOTO): GAMBAR: <deskripsi visual "
+            "detail dalam BAHASA INGGRIS, 1-2 kalimat, untuk AI image generator "
+            "— gambarkan scene foto jurnalistik yang paling mewakili isi artikel: "
+            "siapa/apa yang terlihat, setting/lokasi, suasana, gaya foto. "
+            "Contoh: A dramatic photojournalistic shot of the Indonesian parliament "
+            "building in Jakarta at dusk, with protesters holding banners in the "
+            "foreground, moody lighting, professional news photography>"
         )
     else:
         system_prompt = SYSTEM_PROMPT
@@ -370,7 +378,11 @@ def groq_generate(main_item, related, deep_dive=False):
             "**bold**, > quote). Jangan sertakan daftar sumber.\n"
             "Baris paling akhir: FOTO: <3 kata kunci BAHASA INGGRIS yang "
             "spesifik untuk mencari foto berita relevan, dipisah koma — "
-            "contoh: artificial intelligence robot, technology>"
+            "contoh: artificial intelligence robot, technology>\n"
+            "Baris SEBELUM TERAKHIR (sebelum FOTO): GAMBAR: <deskripsi visual "
+            "detail dalam BAHASA INGGRIS, 1-2 kalimat, untuk AI image generator "
+            "— gambarkan scene foto jurnalistik yang paling mewakili isi artikel: "
+            "siapa/apa yang terlihat, setting/lokasi, suasana, gaya foto.>"
         )
 
     last_err = None
@@ -415,10 +427,12 @@ def groq_generate(main_item, related, deep_dive=False):
 # ------------------------------------------------------------------ simpan
 
 def parse_output(text):
-    """Pisahkan JUDUL: ..., badan artikel, dan FOTO: (keyword Inggris)."""
+    """Pisahkan JUDUL: ..., badan artikel, FOTO: (keyword Inggris),
+    dan GAMBAR: (deskripsi visual detail Inggris untuk AI image)."""
     lines = text.split("\n")
     title = ""
     image_keywords = ""
+    image_desc = ""
     body_start = 0
     for i, ln in enumerate(lines[:4]):
         m = re.match(r"^\s*JUDUL\s*:\s*(.+?)\s*$", ln, re.I)
@@ -430,13 +444,15 @@ def parse_output(text):
         m = re.match(r"^\s*FOTO\s*:\s*(.+?)\s*$", ln, re.I)
         if m:
             image_keywords = m.group(1).strip().strip("\"'")
-            break
+        m2 = re.match(r"^\s*GAMBAR\s*:\s*(.+?)\s*$", ln, re.I)
+        if m2:
+            image_desc = m2.group(1).strip().strip("\"'")
     body = "\n".join(lines[body_start:]).strip()
-    # buang baris FOTO: dari body agar tidak tampil di artikel
-    body = re.sub(r"(?m)^\s*FOTO\s*:.*$", "", body).strip()
+    # buang baris FOTO: dan GAMBAR: dari body agar tidak tampil di artikel
+    body = re.sub(r"(?m)^\s*(FOTO|GAMBAR)\s*:.*$", "", body).strip()
     # buang baris pembuka "# judul" duplikat bila model tetap menulisnya
     body = re.sub(r"^#\s+.*\n", "", body, count=1).lstrip()
-    return title, body, image_keywords
+    return title, body, image_keywords, image_desc
 
 
 def excerpt_of(body, n=160):
@@ -445,17 +461,26 @@ def excerpt_of(body, n=160):
     return (txt[:n] + "…") if len(txt) > n else txt
 
 
-def make_thumbnail_url(title, category):
+def make_thumbnail_url(title, category, image_desc=""):
     """Generate URL thumbnail via Pollinations.ai (gratis, tanpa API key).
 
-    Prompt dibangun dari judul + kategori, di-URL-encode penuh.
+    Jika ada deskripsi visual detail dari Groq (GAMBAR:), pakai itu langsung
+    — jauh lebih relevan daripada keyword acak dari judul.
+    Fallback: prompt generik dari keyword judul.
     """
-    kws = sorted({w for w in keywords(title) if len(w) >= 4})[:5]
-    kw_str = ", ".join(kws) if kws else title[:40]
-    prompt = (
-        f"editorial news illustration, {category}, {kw_str}, "
-        "dramatic lighting, professional journalism style, no text"
-    )
+    if image_desc and len(image_desc.strip()) >= 20:
+        # Deskripsi detail dari Groq — tambah style guide saja
+        prompt = (
+            f"{image_desc.strip()}, professional news photography, "
+            "editorial style, dramatic lighting, no text, no watermark"
+        )
+    else:
+        kws = sorted({w for w in keywords(title) if len(w) >= 4})[:5]
+        kw_str = ", ".join(kws) if kws else title[:40]
+        prompt = (
+            f"editorial news illustration, {category}, {kw_str}, "
+            "dramatic lighting, professional journalism style, no text"
+        )
     encoded = quote(prompt, safe="")
     return (
         "https://image.pollinations.ai/prompt/"
@@ -475,7 +500,7 @@ def sanitize_frontmatter_value(s, maxlen=200):
 
 
 def save_article(title, body, category, n_sources, model, deep_dive=False,
-                 image_keywords=""):
+                 image_keywords="", image_desc=""):
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
     title = sanitize_frontmatter_value(title, 120)
     slug = slugify(title)
@@ -497,11 +522,13 @@ def save_article(title, body, category, n_sources, model, deep_dive=False,
         photo_credit = sanitize_frontmatter_value(img_credit, 120)
         photo_source = img_source
     else:
-        thumbnail = make_thumbnail_url(title, category)  # ilustrasi AI
+        # Fallback AI: pakai deskripsi visual detail dari Groq (GAMBAR:)
+        thumbnail = make_thumbnail_url(title, category, image_desc)
         photo_credit = "Ilustrasi AI / Pollinations"
         photo_source = "ai"
     excerpt = sanitize_frontmatter_value(excerpt_of(body), 200)
     img_kw_fm = sanitize_frontmatter_value(image_keywords, 120)
+    img_desc_fm = sanitize_frontmatter_value(image_desc, 300)
     frontmatter = (
         "---\n"
         f'title: "{title}"\n'
@@ -513,6 +540,7 @@ def save_article(title, body, category, n_sources, model, deep_dive=False,
         f'photo_credit: "{photo_credit}"\n'
         f'photo_source: "{photo_source}"\n'
         f'image_keywords: "{img_kw_fm}"\n'
+        f'image_desc: "{img_desc_fm}"\n'
         f"sources_count: {n_sources}\n"
         f"model: {model}\n"
         "ai_generated: true\n"
@@ -569,14 +597,14 @@ def main():
             continue
         try:
             text, model = groq_generate(it, related)
-            title, body, image_keywords = parse_output(text)
+            title, body, image_keywords, image_desc = parse_output(text)
             if not title:
                 title = it["title"][:90]
             if len(body.split()) < 80:
                 log.warning("Body terlalu pendek, lewati: %s", title[:50])
                 continue
             save_article(title, body, it["category"], 1 + len(related), model,
-                         image_keywords=image_keywords)
+                         image_keywords=image_keywords, image_desc=image_desc)
             made += 1
         except Exception as e:
             log.error("Gagal proses topik '%s': %s", it["title"][:50], e)
