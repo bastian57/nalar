@@ -956,6 +956,21 @@ def save_article(title, body, category, n_sources, model, deep_dive=False,
     (ARTICLES_DIR / f"{slug}.md").write_text(
         frontmatter + "\n" + body.strip() + "\n", encoding="utf-8")
     log.info("Disimpan: src/content/articles/%s.md", slug)
+    # v5.2: antrekan Telegram — diposting SETELAH site deploy agar link
+    # tidak mati (artikel baru belum masuk bundle situs sampai ada build).
+    try:
+        qp = Path(__file__).resolve().parent / "pending_posts.json"
+        q = json.loads(qp.read_text(encoding="utf-8")) if qp.exists() else []
+        q.append({
+            "slug": slug,
+            "title": title,
+            "excerpt": excerpt,
+            "category": category,
+            "thumbnail": thumbnail,
+        })
+        qp.write_text(json.dumps(q, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        log.warning("Gagal antre Telegram: %s", e)
     return slug
 
 # ------------------------------------------------------------------ main

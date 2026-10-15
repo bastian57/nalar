@@ -30,13 +30,14 @@ jobs:
       - name: Generate deep dive
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: python scripts/generate_news.py --deep-dive --max 1
+        run: python scripts/generate_news.py --deep-dive
 
       - name: Commit & push deep dive
         run: |
           git config user.name "nalar-bot"
           git config user.email "nalar-bot[bot]@users.noreply.github.com"
-          git add src/content/articles/
+          [ -f scripts/pending_posts.json ] || echo "[]" > scripts/pending_posts.json
+          git add src/content/articles/ scripts/pending_posts.json
           if git diff --cached --quiet; then
             echo "Tidak ada deep dive baru — skip commit."
           else

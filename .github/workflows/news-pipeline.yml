@@ -1,9 +1,10 @@
-# Nalar — content pipeline otonom v5
+# Nalar — content pipeline otonom v5.2
 # 1 artikel/jam, rotasi 6 kategori (politik, ekonomi, global, teknologi,
-# sejarah, konspirasi). Commit terjadwal memakai "[skip ci]" agar TIDAK
-# memakan jatah build Cloudflare Pages (500/bln gratis); deploy terjadwal
-# 2x/hari via deploy-site.yml. Run MANUAL tidak pakai [skip ci] -> deploy
-# langsung, artikel baru tayang di situs dalam hitungan menit.
+# sejarah, konspirasi). Deploy OTOMATIS max tiap 3 jam (~8x/hari = 240/bln,
+# hemat jatah build Cloudflare Pages 500/bln): commit tanpa "[skip ci]"
+# memicu Pages build. Telegram diposting SETELAH build selesai (tunggu 5 mnt)
+# -> link artikel tidak pernah mati. Di antara deploy, commit pakai "[skip ci]".
+# Run MANUAL selalu deploy langsung.
 name: Nalar News Pipeline
 
 on:
@@ -57,28 +58,61 @@ jobs:
         run: |
           git config user.name "nalar-bot"
           git config user.email "nalar-bot[bot]@users.noreply.github.com"
+          # File state deploy & antrean Telegram (v5.2)
+          [ -f scripts/last_deploy.txt ] || echo 0 > scripts/last_deploy.txt
+          [ -f scripts/pending_posts.json ] || echo "[]" > scripts/pending_posts.json
           git add src/content/articles/ public/rss.xml public/sitemap.xml \
-            scripts/state.json scripts/evergreen_queue.json
+            scripts/state.json scripts/evergreen_queue.json \
+            scripts/pending_posts.json scripts/last_deploy.txt
           if git diff --cached --quiet; then
             echo "Tidak ada artikel baru — skip commit."
             echo "has_new=false" >> $GITHUB_OUTPUT
+            echo "deployed=false" >> $GITHUB_OUTPUT
           else
+            # v5.2: deploy otomatis max tiap 3 jam (hemat build CF Pages:
+            # ~8x/hari = 240/bln dari jatah 500). Telegram HANYA diposting
+            # setelah deploy -> link tidak pernah mati.
+            SHOULD_DEPLOY=false
+            LAST_DEPLOY=$(head -1 scripts/last_deploy.txt 2>/dev/null || echo 0)
+            NOW=$(date -u +%s)
+            if [ $((NOW - LAST_DEPLOY)) -gt 10800 ]; then
+              SHOULD_DEPLOY=true
+            fi
+            if [ "${{ github.event_name }}" != "schedule" ]; then
+              SHOULD_DEPLOY=true  # run manual = deploy langsung
+            fi
             COUNT=$(git diff --cached --name-only -- 'src/content/articles/*.md' | wc -l)
-            SKIP=""
-            if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "$SHOULD_DEPLOY" = true ]; then
+              SKIP=""
+              echo "$NOW" > scripts/last_deploy.txt
+              git add scripts/last_deploy.txt
+              echo "deployed=true" >> $GITHUB_OUTPUT
+            else
               SKIP=" [skip ci]"
+              echo "deployed=false" >> $GITHUB_OUTPUT
             fi
             git commit -m "📰 Nalar auto v5: $COUNT artikel baru ($(date -u +%Y-%m-%d_%H:%M_UTC))$SKIP"
             git push
             echo "has_new=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Post ke Telegram
-        if: steps.commit.outputs.has_new == 'true'
+      - name: Tunggu build + Post ke Telegram
+        if: steps.commit.outputs.deployed == 'true'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python scripts/telegram_post.py
+        run: |
+          sleep 300  # beri waktu Cloudflare Pages build selesai
+          python scripts/telegram_post.py --pending
+          git config user.name "nalar-bot"
+          git config user.email "nalar-bot[bot]@users.noreply.github.com"
+          git add scripts/pending_posts.json
+          if git diff --cached --quiet; then
+            echo "Antrean sudah kosong."
+          else
+            git commit -m "🧹 Kosongkan antrean Telegram [skip ci]"
+            git push
+          fi
 
   notify-failure:
     needs: generate
