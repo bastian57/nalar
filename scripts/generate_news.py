@@ -30,6 +30,8 @@ from urllib.parse import quote, urlparse
 import feedparser
 import requests
 
+from ai_image import (AI_CREDIT, build_illustration_prompt, pollinations_url,
+                      warm_pollinations)
 from smart_image import fetch_smart_image
 
 try:
@@ -867,33 +869,6 @@ def excerpt_of(body, n=160):
     return (txt[:n] + "…") if len(txt) > n else txt
 
 
-def make_thumbnail_url(title, category, image_desc=""):
-    """Generate URL thumbnail via Pollinations.ai (gratis, tanpa API key).
-
-    Jika ada deskripsi visual detail dari Groq (GAMBAR:), pakai itu langsung
-    — jauh lebih relevan daripada keyword acak dari judul.
-    Fallback: prompt generik dari keyword judul.
-    """
-    if image_desc and len(image_desc.strip()) >= 20:
-        # Deskripsi detail dari Groq — tambah style guide saja
-        prompt = (
-            f"{image_desc.strip()}, professional news photography, "
-            "editorial style, dramatic lighting, no text, no watermark"
-        )
-    else:
-        kws = sorted({w for w in keywords(title) if len(w) >= 4})[:5]
-        kw_str = ", ".join(kws) if kws else title[:40]
-        prompt = (
-            f"editorial news illustration, {category}, {kw_str}, "
-            "dramatic lighting, professional journalism style, no text"
-        )
-    encoded = quote(prompt, safe="")
-    return (
-        "https://image.pollinations.ai/prompt/"
-        f"{encoded}?width=800&height=450&nologo=true&model=flux"
-    )
-
-
 def sanitize_frontmatter_value(s, maxlen=200):
     """Bersihkan nilai untuk frontmatter YAML: buang newline, quote, dan
     karakter kontrol agar tidak bisa inject field frontmatter lain."""
@@ -914,25 +889,37 @@ def save_article(title, body, category, n_sources, model, deep_dive=False,
     while (ARTICLES_DIR / f"{slug}.md").exists():
         slug, i = f"{base}-{i}", i + 1
     date_wib = datetime.now(WIB).strftime("%Y-%m-%d")
-    # Smart Image Engine: utamakan keyword Inggris dari Groq (spesifik topik),
-    # fallback ke kata kunci judul bila model tidak mengembalikan FOTO:.
-    en_kws = [k.strip().lower() for k in image_keywords.split(",") if k.strip()]
-    if en_kws:
-        img_url, img_credit, img_source = fetch_smart_image(
-            title, category, set(en_kws))
-    else:
-        kws = {w for w in keywords(title) if len(w) >= 4}
-        img_url, img_credit, img_source = fetch_smart_image(title, category, kws)
-    if img_url:
-        thumbnail = img_url
-        photo_credit = sanitize_frontmatter_value(img_credit, 120)
-        photo_source = img_source
-    else:
-        # Fallback AI: pakai deskripsi visual detail dari Groq (GAMBAR:)
-        thumbnail = make_thumbnail_url(title, category, image_desc)
-        photo_credit = "Ilustrasi AI / Pollinations"
-        photo_source = "ai"
     excerpt = sanitize_frontmatter_value(excerpt_of(body), 200)
+    # v5.4: Ilustrasi AI (Pollinations) jadi SUMBER UTAMA — topik selalu
+    # nyambung karena prompt dibangun dari cerita itu sendiri, bukan dari
+    # keyword generik. Foto stok hanya fallback bila Pollinations gagal.
+    ai_prompt = build_illustration_prompt(title, category, image_desc, excerpt)
+    ai_url = pollinations_url(ai_prompt, slug)
+    thumbnail = photo_credit = photo_source = None
+    try:
+        if warm_pollinations(ai_url):
+            thumbnail, photo_credit, photo_source = ai_url, AI_CREDIT, "ai"
+    except Exception as e:  # noqa: BLE001 — warming gagal = fallback
+        log.warning("Warming ilustrasi gagal: %s", e)
+    if thumbnail is None:
+        # Fallback: foto stok berlisensi (seperti dulu).
+        en_kws = [k.strip().lower()
+                  for k in image_keywords.split(",") if k.strip()]
+        if en_kws:
+            img_url, img_credit, img_source = fetch_smart_image(
+                title, category, set(en_kws))
+        else:
+            kws = {w for w in keywords(title) if len(w) >= 4}
+            img_url, img_credit, img_source = fetch_smart_image(
+                title, category, kws)
+        if img_url:
+            thumbnail = img_url
+            photo_credit = sanitize_frontmatter_value(img_credit, 120)
+            photo_source = img_source
+    if thumbnail is None:
+        # Usaha terakhir: URL Pollinations tanpa warming (siapa tahu saat
+        # pembaca membuka, Pollinations sudah pulih).
+        thumbnail, photo_credit, photo_source = ai_url, AI_CREDIT, "ai"
     img_kw_fm = sanitize_frontmatter_value(image_keywords, 120)
     img_desc_fm = sanitize_frontmatter_value(image_desc, 300)
     frontmatter = (
